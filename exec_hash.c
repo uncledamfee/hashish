@@ -43,7 +43,6 @@ get_executables (void)
 
 	out[0] = NULL; // terminator
 	
-	
 	size_t i = 0;
 	struct dirent *entry;
 	while ((entry = readdir (dir)) != NULL)
@@ -154,10 +153,3 @@ main (int argc, char *argv[])
 		}
 	}
 }
-
-
-
-
-
-
-
