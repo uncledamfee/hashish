@@ -28,7 +28,6 @@ License AGPLv3: GNU AGPL version 3 only <http://gnu.org/licenses/agpl.html>. \n 
 This is libre software: you are free to change and redistribute it. \n \
 here is NO WARRANTY, to the extent permitted by law. \n"
 
-
 //TODO: Add function for SHA and MD5 hash sums
 
 int
@@ -46,7 +45,7 @@ get_executables (void)
 		exit(EXIT_FAILURE); // failed to allocate
 
 	out[0] = NULL; // terminator
-	
+
 	size_t i = 0;
 	struct dirent *entry;
 	while ((entry = readdir (dir)) != NULL)
@@ -56,8 +55,8 @@ get_executables (void)
 		if (strcmp(entry->d_name, ".") == 0 ||
 				strcmp(entry->d_name, "..") == 0 ||
 				S_ISREG(fc.st_mode) == 0)
-						continue;
-			
+					continue;
+
 		if (access((entry->d_name), F_OK|X_OK) == 0) // checks if executable
 		{
 			if (++i >= buflen)
@@ -88,16 +87,17 @@ get_executables (void)
 			strcpy (out[i], entry->d_name);
 		}
 	}
-	
+
 	for (int d = 0; d < buflen + 1; ++d)
 	{
 		if (out[d] != NULL)
 		{
 			printf("%s\n", out[d]);
 		}
+		
 		free(out[d]);
 	}
-	
+
 free(out);
 
 fail:
@@ -114,7 +114,7 @@ main (int argc, char *argv[])
 		struct option long_opts[] =
 		{
 			{"help",		no_argument, 0, 'h'},
-			{"version", no_argument, 0, 'v'},
+			{"version",	no_argument, 0, 'v'},
 			{"list",		no_argument, 0, 'l'},
 			{0, 0, 0, 0}
 		};
@@ -122,7 +122,7 @@ main (int argc, char *argv[])
 		int long_index = 0;
 
 		c = getopt_long (argc, argv, "hvl", 
-							long_opts, &long_index);
+										long_opts, &long_index);
 
 		if (c == -1)
 		{
