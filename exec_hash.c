@@ -16,6 +16,7 @@
 #define USAGE_INFO "OPTIONS:\n \
 -h, --help       Prints help message and exits \n \
 -v, --version    Prints version info and exits \n \
+-l, --list       Prints list of executables \n \
 -S, --SHA1       Creates SHA1 hash of executables found \n \
 -M, --MD5        Creates MD5 hash of executables found \
 "
@@ -26,6 +27,9 @@ Copyright (C) 2016 uncledamfee \n \
 License AGPLv3: GNU AGPL version 3 only <http://gnu.org/licenses/agpl.html>. \n \
 This is libre software: you are free to change and redistribute it. \n \
 here is NO WARRANTY, to the extent permitted by law. \n"
+
+
+//TODO: Add function for SHA and MD5 hash sums
 
 int
 get_executables (void)
@@ -52,14 +56,13 @@ get_executables (void)
 		if (strcmp(entry->d_name, ".") == 0 ||
 				strcmp(entry->d_name, "..") == 0 ||
 				S_ISREG(fc.st_mode) == 0)
-				continue;
+						continue;
 			
-		if (access((entry->d_name), F_OK|X_OK) == 0 & entry->d_name != NULL) // implement that later
+		if (access((entry->d_name), F_OK|X_OK) == 0) // checks if executable
 		{
-			if (++i <= buflen)
+			if (++i >= buflen)
 			{
 				buflen *= 2;
-				printf("%ld", buflen);
 
 				char **old = out;
 				out = realloc (out, buflen * sizeof (char *));
@@ -85,29 +88,17 @@ get_executables (void)
 			strcpy (out[i], entry->d_name);
 		}
 	}
-
-	//int p = 0;
 	
-	for (int d = 0; d <= buflen + 1;)
+	for (int d = 0; d < buflen + 1; ++d)
 	{
 		if (out[d] != NULL)
 		{
-			printf("\n|%s|%d|%ld", out[d], d, bufsize);
-
-			++d;
-		//	++p;
+			printf("%s\n", out[d]);
 		}
-		else if (out[d] == NULL)
-		{
-			++d;
-		//	++p;
-		}
-		else
-			d = bufsize + 1;
-
+		free(out[d]);
 	}
 	
-	free(out);
+free(out);
 
 fail:
 	exit(EXIT_FAILURE);
@@ -122,14 +113,15 @@ main (int argc, char *argv[])
 	{
 		struct option long_opts[] =
 		{
-			{"help",	no_argument, 0, 'h'},
+			{"help",		no_argument, 0, 'h'},
 			{"version", no_argument, 0, 'v'},
+			{"list",		no_argument, 0, 'l'},
 			{0, 0, 0, 0}
 		};
 
 		int long_index = 0;
 
-		c = getopt_long (argc, argv, "hv", 
+		c = getopt_long (argc, argv, "hvl", 
 							long_opts, &long_index);
 
 		if (c == -1)
@@ -142,8 +134,11 @@ main (int argc, char *argv[])
 
 		switch (c)
 		{
-			case 'h':
+			case 'l':
 				get_executables();
+				return 0;
+			case 'h':
+				puts (USAGE_INFO);
 				return 0;
 			case 'v':
 				puts (VERSION_INFO);
