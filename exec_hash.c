@@ -36,8 +36,7 @@ get_executables (void)
 	DIR *dir;
 	dir = opendir("./");
 
-	size_t buflen = 512;
-	long bufsize;
+	size_t buflen = 64;
 
 	struct stat fc;
 	char **out = malloc (buflen * sizeof (char *));
@@ -70,8 +69,6 @@ get_executables (void)
 					out = old;
 					goto fail;
 				}
-
-				bufsize = buflen;
 			}
 
 			out[i + 1] = NULL;
@@ -94,14 +91,13 @@ get_executables (void)
 		{
 			printf("%s\n", out[d]);
 		}
-		
-		free(out[d]);
 	}
 
 free(out);
 
 fail:
 	exit(EXIT_FAILURE);
+	free(out);
 }
 
 int
