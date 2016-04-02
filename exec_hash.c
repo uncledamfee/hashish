@@ -170,8 +170,8 @@ get_executables (void)
 free(out);
 
 fail:
-	exit(EXIT_FAILURE);
 	free(out);
+	exit(EXIT_FAILURE);
 }
 
 int
