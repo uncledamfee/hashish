@@ -1,25 +1,28 @@
 /* Reads current directory for executables and creates
-	 hashes of executable files */
+	 hashes of executable files found*/
 
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
 #include <getopt.h>
-//#include <openssl/md5.h>
-//#include <openssl/sha.h>
+#include <openssl/md5.h>
+#include <openssl/sha.h>
 
+#define BUF_SIZE 256
 #define USAGE_INFO "OPTIONS:\n \
 -h, --help       Prints help message and exits \n \
 -v, --version    Prints version info and exits \n \
--l, --list       Prints list of executables \n \
--S, --SHA1       Creates SHA1 hash of executables found \n \
--M, --MD5        Creates MD5 hash of executables found \
+-t, --test       Used to test in directories (TEMPORARY) \n \
 "
+//-S, --SHA1       Creates SHA1 hash of executables found \n \
+//-M, --MD5        Creates MD5 hash of executables found \
+
 
 #define VERSION_INFO "hashish 0.0.0 \n \
 Copyright (C) 2016 uncledamfee \n \
@@ -28,15 +31,85 @@ License AGPLv3: GNU AGPL version 3 only <http://gnu.org/licenses/agpl.html>. \n 
 This is libre software: you are free to change and redistribute it. \n \
 here is NO WARRANTY, to the extent permitted by law. \n"
 
-//TODO: Add function for SHA and MD5 hash sums
+// TODO: 
+// - Add function for SHA and MD5 hash sums
+// - Add dynamic fopen file naming (ex. <working directory>_sums)
+// - FIX VALGRIND ERRORS
 
+void
+logfile(char *sum)
+{
+	FILE *logfile;
+
+	char *work_dir;
+	char *rc;
+	char buffer[BUF_SIZE+1];
+	char *directory;
+	size_t length;
+
+	work_dir = getcwd(buffer, BUF_SIZE+1);
+	rc = strrchr(work_dir,'/');
+
+	if (rc == NULL || work_dir == NULL)
+	{
+		puts("Unable to fetch directory path");
+
+		exit(EXIT_FAILURE);
+	}
+
+	length = strlen(rc);
+	directory = malloc(length);
+	memcpy(directory, rc + 1, length);
+ 	
+	//puts(directory);
+	free(directory);
+
+	logfile = fopen("hash_sums", "a"); // create file (append if exists)
+	if (logfile == NULL)	// check if created
+	{
+		printf ("Unable to create log file");
+	}
+	
+	fprintf(logfile, "%s\n", sum);
+} 
+
+void
+*sha1(const char *file)
+{
+	int file_len = sizeof(file);
+	SHA_CTX c;
+	unsigned char digest[16];
+	char *sum = malloc(BUF_SIZE * sizeof(char *));
+
+	SHA1_Init(&c);
+
+	while (file_len > 0)
+	{
+		if (file_len > BUF_SIZE)
+			SHA1_Update(&c, file, BUF_SIZE);
+		else
+			SHA1_Update(&c, file, file_len);
+
+		file_len -= BUF_SIZE;
+		file += BUF_SIZE;
+	}
+
+	SHA1_Final(digest, &c);
+
+	for (int n = 0; n < 16; ++n)
+		snprintf(&(sum[n*2]), 16*2, "%02x", (unsigned int) digest[n]);
+
+  logfile(sum);
+	free(sum);
+}
+	
 int
 get_executables (void)
 {
 	DIR *dir;
 	dir = opendir("./");
 
-	size_t buflen = 64;
+	size_t buflen = BUF_SIZE;
 
 	struct stat fc;
 	char **out = malloc (buflen * sizeof (char *));
@@ -72,7 +145,7 @@ get_executables (void)
 			}
 
 			out[i + 1] = NULL;
-			out[i] = malloc (256 * sizeof (char *));
+			out[i] = malloc (BUF_SIZE * sizeof (char *));
 			if (!out[i])
 			{
 				for (char **p = out; *p != NULL; ++p)
@@ -90,6 +163,7 @@ get_executables (void)
 		if (out[d] != NULL)
 		{
 			printf("%s\n", out[d]);
+			sha1(out[d]);
 		}
 	}
 
@@ -111,13 +185,13 @@ main (int argc, char *argv[])
 		{
 			{"help",		no_argument, 0, 'h'},
 			{"version",	no_argument, 0, 'v'},
-			{"list",		no_argument, 0, 'l'},
+			{"test",	no_argument, 0, 't'},
 			{0, 0, 0, 0}
 		};
 
 		int long_index = 0;
 
-		c = getopt_long (argc, argv, "hvl", 
+		c = getopt_long (argc, argv, "hvt", 
 										long_opts, &long_index);
 
 		if (c == -1)
@@ -130,7 +204,7 @@ main (int argc, char *argv[])
 
 		switch (c)
 		{
-			case 'l':
+			case 't':
 				get_executables();
 				return 0;
 			case 'h':
