@@ -14,15 +14,15 @@
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 
-#define BUF_SIZE 256
+#define BUF_SIZE 512
+
 #define USAGE_INFO "OPTIONS:\n \
 -h, --help       Prints help message and exits \n \
 -v, --version    Prints version info and exits \n \
--t, --test       Used to test in directories (TEMPORARY) \n \
+-l, --list       Prints all found executables to stdout \n \
+-S, --SHA1       Creates SHA1 hash of executables found \n \
+-M, --MD5        Creates MD5 hash of executables found \
 "
-//-S, --SHA1       Creates SHA1 hash of executables found \n \
-//-M, --MD5        Creates MD5 hash of executables found \
-
 
 #define VERSION_INFO "hashish 0.0.0 \n \
 Copyright (C) 2016 uncledamfee \n \
@@ -32,12 +32,10 @@ This is libre software: you are free to change and redistribute it. \n \
 here is NO WARRANTY, to the extent permitted by law. \n"
 
 // TODO: 
-// - Add function for SHA and MD5 hash sums
-// - Add dynamic fopen file naming (ex. <working directory>_sums)
 // - FIX VALGRIND ERRORS
 
 void
-logfile(char *sum)
+logfile(char *exe)
 {
 	FILE *logfile;
 
@@ -60,25 +58,55 @@ logfile(char *sum)
 	length = strlen(rc);
 	directory = malloc(length);
 	memcpy(directory, rc + 1, length);
- 	
-	//puts(directory);
-	free(directory);
-
-	logfile = fopen("hash_sums", "a"); // create file (append if exists)
+	
+	snprintf(buffer, sizeof(buffer), "%s_sums", directory);
+	logfile = fopen(buffer, "a"); // create file (append if exists)
 	if (logfile == NULL)	// check if created
 	{
 		printf ("Unable to create log file");
 	}
 	
-	fprintf(logfile, "%s\n", sum);
+	fprintf(logfile, "%s\n", exe);
+	fclose(logfile);
+	free(directory);
 } 
 
 void
-*sha1(const char *file)
+*md5 (const char *file)
+{	
+	int file_len = sizeof(file);
+	MD5_CTX c;
+	unsigned char digest[BUF_SIZE];
+	char *sum = malloc(BUF_SIZE * sizeof(char *));
+
+	MD5_Init(&c);
+
+	while (file_len > 0)
+	{
+		if (file_len > BUF_SIZE)
+			MD5_Update(&c, file, BUF_SIZE);
+		else
+			MD5_Update(&c, file, file_len);
+
+		file_len -= BUF_SIZE;
+		file += BUF_SIZE;
+	}
+
+	MD5_Final(digest, &c);
+
+	for (int n = 0; n < 16; ++n)
+		snprintf(&(sum[n*2]), 16*2, "%02x", (unsigned int) digest[n]);
+
+  logfile(sum);
+	free(sum);
+}
+
+void 
+*sha1 (const char *file)
 {
 	int file_len = sizeof(file);
 	SHA_CTX c;
-	unsigned char digest[16];
+	unsigned char digest[BUF_SIZE];
 	char *sum = malloc(BUF_SIZE * sizeof(char *));
 
 	SHA1_Init(&c);
@@ -103,7 +131,7 @@ void
 	free(sum);
 }
 	
-int
+char **
 get_executables (void)
 {
 	DIR *dir;
@@ -140,6 +168,7 @@ get_executables (void)
 				if (!out)
 				{
 					out = old;
+					free(out);
 					goto fail;
 				}
 			}
@@ -158,19 +187,11 @@ get_executables (void)
 		}
 	}
 
-	for (int d = 0; d < buflen + 1; ++d)
-	{
-		if (out[d] != NULL)
-		{
-			printf("%s\n", out[d]);
-			sha1(out[d]);
-		}
-	}
-
+return out;
 free(out);
 
+
 fail:
-	free(out);
 	exit(EXIT_FAILURE);
 }
 
@@ -178,20 +199,22 @@ int
 main (int argc, char *argv[])
 {
 	int c;
-
+	char **val = get_executables();
 	while (1)
 	{
 		struct option long_opts[] =
 		{
 			{"help",		no_argument, 0, 'h'},
 			{"version",	no_argument, 0, 'v'},
-			{"test",	no_argument, 0, 't'},
+			{"SHA1",    no_argument, 0, 'S'},
+			{"MD5",     no_argument, 0, 'M'},
+			{"list",    no_argument, 0, 'l'},
 			{0, 0, 0, 0}
 		};
 
 		int long_index = 0;
 
-		c = getopt_long (argc, argv, "hvt", 
+		c = getopt_long (argc, argv, "hvtSMl", 
 										long_opts, &long_index);
 
 		if (c == -1)
@@ -204,9 +227,36 @@ main (int argc, char *argv[])
 
 		switch (c)
 		{
-			case 't':
-				get_executables();
+			case 'S':
+				for (int d = 0; d < BUF_SIZE + 1; ++d)
+				{
+					if (val[d] != NULL)
+					{
+						sha1(val[d]);
+					}
+				}	
+			  free(val);
 				return 0;
+			case 'M':
+				for (int d = 0; d < BUF_SIZE + 1; ++d)
+				{
+					if (val[d] != NULL)
+						{
+							md5(val[d]);
+						}
+				}
+				free(val);
+				return 0;	
+			case 'l':
+				for (int d = 0; d < BUF_SIZE + 1; ++d)
+				{
+					if (val[d] != NULL)
+					{
+						printf("%s\n", val[d]);
+					}
+				}
+				free(val);
+			  return 0;
 			case 'h':
 				puts (USAGE_INFO);
 				return 0;
