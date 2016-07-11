@@ -74,7 +74,6 @@ logfile (char *exe)
 void *
 file_hash (const char *file, int opt)
 {
-  int file_len = sizeof (file);
   MD5_CTX c;
   SHA_CTX z;
   unsigned char digest[BUF_SIZE];
