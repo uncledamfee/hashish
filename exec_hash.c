@@ -72,65 +72,38 @@ logfile(char *exe)
 } 
 
 void
-*md5 (const char *file)
+*file_hash (const char *file, int opt)
 {	
 	int file_len = sizeof(file);
 	MD5_CTX c;
+	SHA_CTX z;
 	unsigned char digest[BUF_SIZE];
 	char *sum = malloc(BUF_SIZE * sizeof(char *));
-
-	MD5_Init(&c);
-
-	while (file_len > 0)
-	{
-		if (file_len > BUF_SIZE)
-			MD5_Update(&c, file, BUF_SIZE);
-		else
-			MD5_Update(&c, file, file_len);
-
-		file_len -= BUF_SIZE;
-		file += BUF_SIZE;
-	}
-
-	MD5_Final(digest, &c);
-
-	for (int n = 0; n < 16; ++n)
-		snprintf(&(sum[n*2]), 16*2, "%02x", (unsigned int) digest[n]);
-
-  logfile(sum);
-	free(sum);
-}
-
-void 
-*sha1 (const char *file)
-{
-	int file_len = sizeof(file);
-	SHA_CTX c;
-	unsigned char digest[BUF_SIZE];
-	char *sum = malloc(BUF_SIZE * sizeof(char *));
-
-	SHA1_Init(&c);
-
-	while (file_len > 0)
-	{
-		if (file_len > BUF_SIZE)
-			SHA1_Update(&c, file, BUF_SIZE);
-		else
-			SHA1_Update(&c, file, file_len);
-
-		file_len -= BUF_SIZE;
-		file += BUF_SIZE;
-	}
-
-	SHA1_Final(digest, &c);
-
-	for (int n = 0; n < 16; ++n)
-		snprintf(&(sum[n*2]), 16*2, "%02x", (unsigned int) digest[n]);
-
-  logfile(sum);
-	free(sum);
-}
 	
+	if (opt == 'M')
+	{
+		logfile("\nMD5 Hash Sums");
+		logfile("================");
+		MD5_Init(&c);
+		MD5_Update(&c, file, file_len);
+		MD5_Final(digest, &c);
+	}
+	else
+	{
+		logfile("\nSHA1 Hash Sums");
+		logfile("=================");
+		SHA1_Init(&z);
+		SHA1_Update(&z, file, file_len);
+		SHA1_Final(digest, &z);
+	}
+	
+	for (int n = 0; n < 16; ++n)
+		snprintf(&(sum[n*2]), 16*2, "%02x", (unsigned int)digest[n]);
+
+  logfile(sum);
+	free(sum);
+}
+
 char **
 get_executables (void)
 {
@@ -151,7 +124,8 @@ get_executables (void)
 	while ((entry = readdir (dir)) != NULL)
 	{
 		stat(entry->d_name, &fc);
-
+    
+		// only files from working directory plz
 		if (strcmp(entry->d_name, ".") == 0 ||
 				strcmp(entry->d_name, "..") == 0 ||
 				S_ISREG(fc.st_mode) == 0)
@@ -190,14 +164,13 @@ get_executables (void)
 return out;
 free(out);
 
-
 fail:
 	exit(EXIT_FAILURE);
 }
 
 int
 main (int argc, char *argv[])
-{
+{	
 	int c;
 	char **val = get_executables();
 	while (1)
@@ -232,7 +205,7 @@ main (int argc, char *argv[])
 				{
 					if (val[d] != NULL)
 					{
-						sha1(val[d]);
+						file_hash(val[d], c);
 					}
 				}	
 			  free(val);
@@ -242,7 +215,7 @@ main (int argc, char *argv[])
 				{
 					if (val[d] != NULL)
 						{
-							md5(val[d]);
+							file_hash(val[d], c);
 						}
 				}
 				free(val);
