@@ -85,7 +85,7 @@ file_hash (const char *file, int opt)
       logfile ("\nMD5 Hash Sums");
       logfile ("================");
       MD5_Init (&c);
-      MD5_Update (&c, file, file_len);
+      MD5_Update (&c, file, BUF_SIZE);
       MD5_Final (digest, &c);
     }
   else
@@ -93,7 +93,7 @@ file_hash (const char *file, int opt)
       logfile ("\nSHA1 Hash Sums");
       logfile ("=================");
       SHA1_Init (&z);
-      SHA1_Update (&z, file, file_len);
+      SHA1_Update (&z, file, BUF_SIZE);
       SHA1_Final (digest, &z);
     }
 
