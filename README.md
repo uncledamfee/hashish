@@ -30,8 +30,9 @@ Then,
 Usage
 -----
 hashish creates a file with hash sums of the found binary files located in
-the working directory. If working directory has escalated privledges, use
-sudo :
+the working directory.
+
+If working directory has escalated privledges, use
 	
 	$ sudo hashish [option]
  

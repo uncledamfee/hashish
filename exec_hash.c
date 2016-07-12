@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
+#include <stdint.h>
 #include <getopt.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>
@@ -19,7 +20,7 @@
 #define USAGE_INFO "OPTIONS:\n \
 -h, --help       Prints help message and exits \n \
 -v, --version    Prints version info and exits \n \
--l, --list       Prints all found executables to stdout \n \
+-l, --list       Prints information of all found binaries to stdout \n \
 -S, --SHA1       Creates SHA1 hash of executables found \n \
 -M, --MD5        Creates MD5 hash of executables found \
 "
@@ -33,6 +34,28 @@ here is NO WARRANTY, to the extent permitted by law. \n"
 
 // TODO:
 // - FIX VALGRIND ERRORS
+
+void
+print_file_stat(const char *file)
+{
+	struct stat s_file;
+
+	stat(file, &s_file); 
+		
+	printf ((s_file.st_mode & S_IRUSR) ? "r" : "-");
+	printf ((s_file.st_mode & S_IWUSR) ? "w" : "-");
+	printf ((s_file.st_mode & S_IXUSR) ? "x" : "-");
+	printf ((s_file.st_mode & S_IRGRP) ? "r" : "-");
+	printf ((s_file.st_mode & S_IWGRP) ? "w" : "-");
+	printf ((s_file.st_mode & S_IXGRP) ? "x" : "-");
+	printf ((s_file.st_mode & S_IROTH) ? "r" : "-");
+	printf ((s_file.st_mode & S_IWOTH) ? "w" : "-");
+	printf ((s_file.st_mode & S_IXOTH) ? "x" : "-");
+	printf (" %zu ", s_file.st_size);
+	printf (" %zu ", s_file.st_nlink);
+	printf (" %zu ", s_file.st_ino);
+} 
+
 
 void
 logfile (char *exe)
@@ -124,7 +147,7 @@ get_executables (void)
     {
       stat (entry->d_name, &fc);
 
-// only files from working directory plz
+			// only files from working directory plz
       if (strcmp (entry->d_name, ".") == 0 ||
           strcmp (entry->d_name, "..") == 0 || S_ISREG (fc.st_mode) == 0)
         continue;
@@ -171,6 +194,7 @@ main (int argc, char *argv[])
 {
   int c;
   char **val = get_executables ();
+
   while (1)
     {
       struct option long_opts[] = {
@@ -220,9 +244,10 @@ main (int argc, char *argv[])
           for (int d = 0; d < BUF_SIZE + 1; ++d)
             {
               if (val[d] != NULL)
-                {
+							{
+									print_file_stat(val[d]);
                   printf ("%s\n", val[d]);
-                }
+							}
             }
           free (val);
           return 0;
