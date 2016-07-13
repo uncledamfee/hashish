@@ -102,7 +102,7 @@ file_hash (const char *file, int opt)
 
   if (opt == 'M')
     {
-      logfile ("\nMD5 Hash Sums");
+      logfile ("\nMD5 Hash Sum");
       logfile ("================");
       MD5_Init (&c);
       MD5_Update (&c, file, BUF_SIZE);
@@ -110,7 +110,7 @@ file_hash (const char *file, int opt)
     }
   else
     {
-      logfile ("\nSHA1 Hash Sums");
+      logfile ("\nSHA1 Hash Sum");
       logfile ("=================");
       SHA1_Init (&z);
       SHA1_Update (&z, file, BUF_SIZE);
@@ -122,6 +122,8 @@ file_hash (const char *file, int opt)
 
   logfile (sum);
   free (sum);
+
+	return 0;
 }
 
 char **
@@ -259,4 +261,6 @@ main (int argc, char *argv[])
           return 0;
         }
     }
+
+	return 0;
 }
