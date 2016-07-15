@@ -80,7 +80,7 @@ logfile (char *exe)
   directory = malloc (length);
   memcpy (directory, rc + 1, length);
 
-  snprintf (buffer, sizeof (buffer), "%s_sums", directory);
+  snprintf (buffer, sizeof buffer, "%s_sums", directory);
   logfile = fopen (buffer, "a");        // create file (append if exists)
   if (logfile == NULL)          // check if created
     {
@@ -92,16 +92,15 @@ logfile (char *exe)
   free (directory);
 }
 
-void *
+void
 file_hash (const char *file, int opt)
 {
-  MD5_CTX c;
-  SHA_CTX z;
   unsigned char digest[BUF_SIZE];
-  char *sum = malloc (BUF_SIZE * sizeof (char *));
+  char sum[(BUF_SIZE * 2) + 1];
 
   if (opt == 'M')
     {
+      MD5_CTX c;
       logfile ("\nMD5 Hash Sum");
       logfile ("================");
       MD5_Init (&c);
@@ -110,20 +109,18 @@ file_hash (const char *file, int opt)
     }
   else
     {
+      SHA_CTX c;
       logfile ("\nSHA1 Hash Sum");
       logfile ("=================");
-      SHA1_Init (&z);
-      SHA1_Update (&z, file, BUF_SIZE);
-      SHA1_Final (digest, &z);
+      SHA1_Init (&c);
+      SHA1_Update (&c, file, BUF_SIZE);
+      SHA1_Final (digest, &c);
     }
 
-  for (int n = 0; n < 16; ++n)
-    snprintf (&(sum[n * 2]), 16 * 2, "%02x", (unsigned int) digest[n]);
+  for (int n = 0; n <= 16; ++n)
+    snprintf (&(sum[n * 2]), 16 * 3, "%02x", (unsigned int) digest[n]);
 
   logfile (sum);
-  free (sum);
-
-	return 0;
 }
 
 char **
@@ -154,12 +151,12 @@ get_executables (void)
 
       if (access ((entry->d_name), F_OK | X_OK) == 0)   // checks if executable
         {
-          if (++i >= buflen)
+          if (i + 1 >= buflen)
             {
               buflen *= 2;
 
               char **old = out;
-              out = realloc (out, buflen * sizeof (char *));
+              out = realloc (out, buflen * sizeof (char));
               if (!out)
                 {
                   out = old;
@@ -169,23 +166,23 @@ get_executables (void)
             }
 
           out[i + 1] = NULL;
-          out[i] = malloc (BUF_SIZE * sizeof (char *));
+          out[i] = malloc (BUF_SIZE * sizeof (char));
           if (!out[i])
             {
               for (char **p = out; *p != NULL; ++p)
                 free (*p);
 
-              free (out);
+              goto fail;
             }
 
-          strcpy (out[i], entry->d_name);
+          strcpy (out[i++], entry->d_name);
         }
     }
 
   return out;
-  free (out);
 
 fail:
+  free (out);
   exit (EXIT_FAILURE);
 }
 
@@ -193,74 +190,57 @@ int
 main (int argc, char *argv[])
 {
   int c;
-  char **val = get_executables ();
+  int long_index = 0;
+  char **vals = get_executables ();
 
-  while (1)
+  struct option long_opts[] = {
+    {"help", no_argument, 0, 'h'},
+    {"version", no_argument, 0, 'v'},
+    {"SHA1", no_argument, 0, 'S'},
+    {"MD5", no_argument, 0, 'M'},
+    {"list", no_argument, 0, 'l'},
+    {0, 0, 0, 0}
+  };
+
+  c = getopt_long (argc, argv, "hvtSMl", long_opts, &long_index);
+
+  if (c == -1)
     {
-      struct option long_opts[] = {
-        {"help", no_argument, 0, 'h'},
-        {"version", no_argument, 0, 'v'},
-        {"SHA1", no_argument, 0, 'S'},
-        {"MD5", no_argument, 0, 'M'},
-        {"list", no_argument, 0, 'l'},
-        {0, 0, 0, 0}
-      };
+      puts (USAGE_INFO);
+      puts (VERSION_INFO);
 
-      int long_index = 0;
-
-      c = getopt_long (argc, argv, "hvtSMl", long_opts, &long_index);
-
-      if (c == -1)
-        {
-          puts (USAGE_INFO);
-          puts (VERSION_INFO);
-
-          return 1;
-        }
-
-      switch (c)
-        {
-        case 'S':
-          for (int d = 0; d < BUF_SIZE + 1; ++d)
-            {
-              if (val[d] != NULL)
-                {
-                  file_hash (val[d], c);
-                }
-            }
-          free (val);
-          return 0;
-        case 'M':
-          for (int d = 0; d < BUF_SIZE + 1; ++d)
-            {
-              if (val[d] != NULL)
-                {
-                  file_hash (val[d], c);
-                }
-            }
-          free (val);
-          return 0;
-        case 'l':
-          for (int d = 0; d < BUF_SIZE + 1; ++d)
-            {
-              if (val[d] != NULL)
-                {
-                  print_file_stat (val[d]);
-                  printf ("%s\n", val[d]);
-                }
-            }
-          free (val);
-          return 0;
-        case 'h':
-          puts (USAGE_INFO);
-          return 0;
-        case 'v':
-          puts (VERSION_INFO);
-          return 0;
-        case '?':
-          return 0;
-        }
+      return 0;
     }
 
-	return 0;
+  switch (c)
+    {
+    case 'S':
+    case 'M':
+      for (char **v = vals; *v != NULL; ++v)
+        {
+          file_hash (*v, c);
+          free (*v);
+        }
+      free (vals);
+      return 0;
+    case 'l':
+      for (char **v = vals; *v != NULL; ++v)
+        {
+          print_file_stat (*v);
+          printf ("%s\n", *v);
+          free (*v);
+        }
+      free (vals);
+      return 0;
+    case 'h':
+      puts (USAGE_INFO);
+      return 0;
+    case 'v':
+      puts (VERSION_INFO);
+      return 0;
+    case '?':
+      return 0;
+    }
+
+  return 0;
 }
