@@ -56,40 +56,41 @@ print_file_stat (const char *file)
 
 
 void
-logfile (char *exe)
+logfile (char *bin)
 {
-  FILE *logfile;
-
-  char *work_dir;
-  char *rc;
+	FILE *logfile;
+  
+	char *rc;
+	size_t length;
+	char *work_dir;
   char buffer[BUF_SIZE + 1];
-  char *directory;
-  size_t length;
+	char dir[BUF_SIZE + 1];
 
-  work_dir = getcwd (buffer, BUF_SIZE + 1);
-  rc = strrchr (work_dir, '/');
+	// retrieve current directory to name file
+  work_dir = getcwd (buffer, sizeof(buffer));
 
-  if (rc == NULL || work_dir == NULL)
+	if (work_dir == NULL)
     {
       puts ("Unable to fetch directory path");
 
       exit (EXIT_FAILURE);
-    }
+   }
 
-  length = strlen (rc);
-  directory = malloc (length);
-  memcpy (directory, rc + 1, length);
-
-  snprintf (buffer, sizeof buffer, "%s_sums", directory);
-  logfile = fopen (buffer, "a");        // create file (append if exists)
+	rc = strrchr (work_dir, '/');
+	length = strlen(rc);
+	memcpy(dir, rc + 1, length);
+ 
+  snprintf (buffer, sizeof(buffer), "../%s_sums", dir);
+  
+	//create file
+	logfile = fopen (buffer, "a");
   if (logfile == NULL)          // check if created
     {
       printf ("Unable to create log file");
     }
 
-  fprintf (logfile, "%s\n", exe);
+  fprintf (logfile, "%s\n", bin);
   fclose (logfile);
-  free (directory);
 }
 
 void
