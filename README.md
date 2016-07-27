@@ -1,7 +1,5 @@
 hashish
 ===
-_under development_
-
 Creates hash sums of executables found in directory
   
 ---

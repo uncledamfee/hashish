@@ -28,10 +28,7 @@ Copyright (C) 2016 uncledamfee \n \
 \n \
 License AGPLv3: GNU AGPL version 3 only <http://gnu.org/licenses/agpl.html>. \n \
 This is libre software: you are free to change and redistribute it. \n \
-here is NO WARRANTY, to the extent permitted by law. \n"
-
-// TODO:
-// - FIX VALGRIND ERRORS
+here is NO WARRANTY, to the extent permitted by law. \n
 
 void
 print_file_stat (const char *file)
