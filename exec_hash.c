@@ -26,7 +26,7 @@
 #define VERSION_INFO "hashish 0.0.0 \n \
 Copyright (C) 2016 uncledamfee \n \
 \n \
-License AGPLv3: GNU AGPL version 3 only <http://gnu.org/licenses/agpl.html>. \n \
+License GPLv3: GNU GPL version 3 only <https://www.gnu.org/licenses/gpl.html>. \n \
 This is libre software: you are free to change and redistribute it. \n \
 here is NO WARRANTY, to the extent permitted by law. \n
 "
